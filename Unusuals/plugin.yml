@@ -1,4 +1,14 @@
 name: Unusuals
-version: 0.1.0-dev1
+version: 0.1.0
 main: net.amigocraft.unusuals.Main
 description: Unusual hats, in Minecraft!
+
+commands:
+  unusual:
+    description: The main command for the plugin.
+    usage: /unusual [args]
+    
+permissions:
+  unusual.spawn:
+    description: Allows spawning of unusuals.
+    default: op

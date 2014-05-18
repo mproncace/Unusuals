@@ -1,0 +1,39 @@
+# ########################## #
+# # Unusuals Configuration # #
+# ########################## #
+
+# The time in ticks between unusual effects refreshing. There are 20 ticks in a second.
+effect-interval: 5
+
+# Define your effects here!
+effects:
+    Burning Flames:
+        particles: FIRE # the particle type to display
+        speed: 0.02 # the speed of the particles
+        count: 1 # the number of particles spawned each time the effect refreshes
+        radius: 0.0001 # the area covered by the particles
+    Green Energy:
+        particles: GREEN_SPARKLE
+        speed: 1
+        count: 1
+        radius: 0.2
+    Purple Energy:
+        particles: ENDER
+        speed: 0.2
+        count: 2
+        radius: 0.2
+    Smoking:
+        particles: SMOKE
+        speed: 0.01
+        count: 1
+        radius: 0.0001
+    Snowy Snow:
+        particles: FIREWORK_SPARK
+        speed: 0.01
+        count: 2
+        radius: 0.5
+    Hearts:
+        particles: HEART
+        speed: 0.001
+        count: 1
+        radius: 0.2
