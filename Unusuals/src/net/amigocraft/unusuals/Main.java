@@ -1,5 +1,6 @@
 package net.amigocraft.unusuals;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -45,6 +46,22 @@ public class Main extends JavaPlugin implements Listener {
 		Bukkit.getPluginManager().registerEvents(this, this);
 
 		saveDefaultConfig();
+
+		// updater
+		if (getConfig().getBoolean("enable-updater")){
+			new Updater(this, 80091, this.getFile(), Updater.UpdateType.DEFAULT, true);
+		}
+
+		// submit metrics
+		if (getConfig().getBoolean("enable-metrics")){
+			try {
+				Metrics metrics = new Metrics(this);
+				metrics.start();
+			}
+			catch (IOException ex){
+				log.warning("Failed to enable plugin metrics!");
+			}
+		}
 
 		for (Player p : Bukkit.getOnlinePlayers()){
 			checkForUnusual(p, p.getInventory().getHelmet());

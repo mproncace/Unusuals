@@ -37,3 +37,9 @@ effects:
         speed: 0.001
         count: 1
         radius: 0.2
+        
+# Should the plugin auto-update?
+auto-update: true
+
+# Allow me to collect anonymous usage statistics (pretty please)? Set to false if you're paranoid.
+enable-metrics: true
