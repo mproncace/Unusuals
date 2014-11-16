@@ -1,3 +1,27 @@
+/**
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2014 Maxim RoncacÃ©
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 package net.amigocraft.unusuals;
 
 import java.io.IOException;
@@ -19,6 +43,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.inventory.InventoryType.SlotType;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
@@ -35,13 +60,12 @@ public class Main extends JavaPlugin implements Listener {
 	private static final int EFFECT_COLOR = 7;
 
 	public void onEnable(){
-		if (!ParticleEffect.isCompatible()){
-			getLogger().severe("This version of Craftbukkit is not supported! Disabling...");
-			Bukkit.getPluginManager().disablePlugin(this);
-			return;
-		}
 		plugin = this;
 		log = getLogger();
+
+		ParticleEffect.isCompatible();
+		if (!plugin.isEnabled())
+			return;
 
 		Bukkit.getPluginManager().registerEvents(this, this);
 
@@ -97,9 +121,9 @@ public class Main extends JavaPlugin implements Listener {
 			if (pEffect != null){
 				ItemStack is = new ItemStack(type, 1);
 				ItemMeta meta = is.getItemMeta();
-				meta.setDisplayName("§" + UNUSUAL_COLOR + "Unusual " + WordUtils.capitalize(type.toString().toLowerCase().replace("_", " ")));
+				meta.setDisplayName("Â§" + UNUSUAL_COLOR + "Unusual " + WordUtils.capitalize(type.toString().toLowerCase().replace("_", " ")));
 				List<String> lore = new ArrayList<String>();
-				lore.add("§" + EFFECT_COLOR + "Effect: " + effect);
+				lore.add("Â§" + EFFECT_COLOR + "Effect: " + effect);
 				meta.setLore(lore);
 				is.setItemMeta(meta);
 				return is;
@@ -167,11 +191,15 @@ public class Main extends JavaPlugin implements Listener {
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 	public void onInventoryClick(InventoryClickEvent e){
 		synchronized(players){
-			if (e.getInventory() instanceof PlayerInventory){
-				if (e.getSlotType() == SlotType.ARMOR && e.getSlot() == 5){ // helmet slot
-					if (isUnusual(e.getCurrentItem()))
-						if (!e.getViewers().isEmpty())
+			if (e.getInventory().getHolder() instanceof Player){
+				if (e.getSlotType() == SlotType.ARMOR &&
+						((e.getInventory().getType() == InventoryType.PLAYER && e.getSlot() == 5) || // wtf minecraft
+								(e.getInventory().getType() == InventoryType.CRAFTING && e.getSlot() == 39))){
+					if (isUnusual(e.getCurrentItem())) {
+						if (!e.getViewers().isEmpty()) {
 							players.remove(((Player)(e.getWhoClicked())).getUniqueId()); // remove the unusual effect from the player
+						}
+					}
 					Main.checkForUnusual((Player)e.getWhoClicked(), e.getCursor());
 				}
 			}
@@ -184,20 +212,18 @@ public class Main extends JavaPlugin implements Listener {
 	}
 
 	public static boolean isUnusual(ItemStack itemstack){
-		if (itemstack != null &&
+		return itemstack != null &&
 				itemstack.getItemMeta() != null &&
 				itemstack.getItemMeta().getLore() != null &&
 				!itemstack.getItemMeta().getLore().isEmpty() &&
-				itemstack.getItemMeta().getDisplayName().startsWith("§" + UNUSUAL_COLOR + "Unusual ") &&
-				itemstack.getItemMeta().getLore().get(0).startsWith("§" + EFFECT_COLOR + "Effect: "))
-			return true;
-		return false;
+				itemstack.getItemMeta().getDisplayName().startsWith("Â§" + UNUSUAL_COLOR + "Unusual ") &&
+				itemstack.getItemMeta().getLore().get(0).startsWith("Â§" + EFFECT_COLOR + "Effect: ");
 	}
 
 	public static void checkForUnusual(Player player, ItemStack itemstack){
 		synchronized(players){
 			if (isUnusual(itemstack)){
-				String effectName = itemstack.getItemMeta().getLore().get(0).replace("§" + EFFECT_COLOR +
+				String effectName = itemstack.getItemMeta().getLore().get(0).replace("Â§" + EFFECT_COLOR +
 						"Effect: ", "");// extract the effect name
 				ConfigurationSection cs = Main.plugin.getConfig().getConfigurationSection("effects." + effectName);
 				if (cs != null){ // make sure the effect is defined
