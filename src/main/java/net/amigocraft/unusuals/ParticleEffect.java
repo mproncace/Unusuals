@@ -12,50 +12,10 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
 /**
- * Particle Effects Lib
- *
- * @author minnymin3
- *
- * This class has been greatly rewritten for this plugin for efficiency.
+ * Particle effects handler based on the library by minnymin3
  */
 
-public enum ParticleEffect {
-
-	HUGE_EXPLODE("hugeexplosion", 0),
-	LARGE_EXPLODE("largeexplode", 1),
-	FIREWORK_SPARK("fireworksSpark", 2),
-	AIR_BUBBLE("bubble", 3),
-	SUSPEND("suspend", 4),
-	DEPTH_SUSPEND("depthSuspend", 5),
-	TOWN_AURA("townaura", 6),
-	CRITICAL_HIT("crit", 7),
-	MAGIC_CRITICAL_HIT("magicCrit", 8),
-	MOB_SPELL("mobSpell", 9),
-	MOB_SPELL_AMBIENT("mobSpellAmbient", 10),
-	SPELL("spell", 11),
-	INSTANT_SPELL("instantSpell", 12),
-	PURPLE_SPARKLE("witchMagic", 13),
-	NOTE_BLOCK("note", 14),
-	ENDER("portal", 15),
-	ENCHANTMENT_TABLE("enchantmenttable", 16),
-	EXPLODE("explode", 17),
-	FIRE("flame", 18),
-	LAVA_SPARK("lava", 19),
-	FOOTSTEP("footstep", 20),
-	SPLASH("splash", 21),
-	SMOKE("largesmoke", 22),
-	CLOUD("cloud", 23),
-	REDSTONE_DUST("reddust", 24),
-	SNOWBALL_HIT("snowballpoof", 25),
-	DRIP_WATER("dripWater", 26),
-	DRIP_LAVA("dripLava", 27),
-	SNOW_DIG("snowshovel", 28),
-	SLIME("slime", 29),
-	HEART("heart", 30),
-	ANGRY_VILLAGER("angryVillager", 31),
-	GREEN_SPARKLE("happyVillager", 32),
-	ICONCRACK("iconcrack", 33),
-	TILECRACK("tilecrack", 34);
+public class ParticleEffect {
 
 	private static Class<?> packetClass = null;
 	private static Constructor<?> packetConstructor = null;
@@ -65,8 +25,10 @@ public enum ParticleEffect {
 	private static Method player_sendPacket = null;
 	private static HashMap<Class<? extends Entity>, Method> handles = new HashMap<Class<? extends Entity>, Method>();
 
-	private String name;
-	private int id;
+	private ParticleType type;
+	private double speed;
+	private int count;
+	private double radius;
 
 	static {
 		String vString = getVersion().replace("v", "");
@@ -96,84 +58,49 @@ public enum ParticleEffect {
 		}
 	}
 
-	ParticleEffect(String name, int id){
-		this.name = name;
-		this.id = id;
+	public ParticleEffect(ParticleType type, double speed, int count, double radius){
+		this.type = type;
+		this.speed = speed;
+		this.count = count;
+		this.radius = radius;
 	}
 
 	/**
-	 * Gets the name of the Particle Effect
+	 * Gets the speed of the particle effect
 	 *
-	 * @return The particle effect name
+	 * @return The speed of the particle effect
 	 */
-	String getName(){
-		return name;
+	public double getSpeed(){
+		return speed;
 	}
 
 	/**
-	 * Gets the id of the Particle Effect
+	 * Gets the number of particles in the effect
 	 *
-	 * @return The id of the Particle Effect
+	 * @return The number of particles in the effect
 	 */
-	int getId(){
-		return id;
+	public int getCount(){
+		return count;
 	}
 
 	/**
-	 * Send a particle effect to a player
+	 * Gets the radius of the particle effect
 	 *
-	 * @param effect
-	 *            The particle effect to send
-	 * @param player
-	 *            The player to send the effect to
-	 * @param location
-	 *            The location to send the effect to
-	 * @param offsetX
-	 *            The x range of the particle effect
-	 * @param offsetY
-	 *            The y range of the particle effect
-	 * @param offsetZ
-	 *            The z range of the particle effect
-	 * @param speed
-	 *            The speed (or color depending on the effect) of the particle
-	 *            effect
-	 * @param count
-	 *            The count of effects
+	 * @return The radius of the particle effect
 	 */
-	public static void sendToPlayer(ParticleEffect effect, Player player, Location location, float offsetX, float offsetY,
-									float offsetZ, float speed, int count){
-		try {
-			Object packet = createPacket(effect, location, offsetX, offsetY, offsetZ, speed, count);
-			sendPacket(player, packet);
-		}
-		catch (Exception e){
-			e.printStackTrace();
-		}
-
+	public double getRadius(){
+		return radius;
 	}
 
 	/**
 	 * Send a particle effect to all players
 	 *
-	 * @param effect
-	 *            The particle effect to send
 	 * @param location
 	 *            The location to send the effect to
-	 * @param offsetX
-	 *            The x range of the particle effect
-	 * @param offsetY
-	 *            The y range of the particle effect
-	 * @param offsetZ
-	 *            The z range of the particle effect
-	 * @param speed
-	 *            The speed (or color depending on the effect) of the particle
-	 *            effect
-	 * @param count
-	 *            The count of effects
 	 */
-	public static void sendToLocation(ParticleEffect effect, Location location, float offsetX, float offsetY, float offsetZ, float speed, int count){
+	public void sendToLocation(Location location){
 		try {
-			Object packet = createPacket(effect, location, offsetX, offsetY, offsetZ, speed, count);
+			Object packet = createPacket(location);
 			for (Player player : Bukkit.getOnlinePlayers()){
 				sendPacket(player, packet);
 			}
@@ -183,22 +110,23 @@ public enum ParticleEffect {
 		}
 	}
 
-	private static Object createPacket(ParticleEffect effect, Location location, float offsetX, float offsetY,
-									   float offsetZ, float speed, int count) throws Exception {
-		if (count <= 0){
-			count = 1;
+	private Object createPacket(Location location) throws Exception {
+		if (this.count <= 0){
+			this.count = 1;
 		}
-		Object packet = null;
+		Object packet;
 		if (netty) {
-			packet = packetConstructor.newInstance(effect.name, (float)location.getX(),
-					(float)location.getY(), (float)location.getZ(), offsetX, offsetY, offsetZ, speed, count);
+			packet = packetConstructor.newInstance(type.getName(),
+					(float)location.getX(), (float)location.getY(), (float)location.getZ(),
+					(float)this.radius, (float)this.radius, (float)this.radius,
+					(float)this.speed, this.count);
 		}
 		else {
 			packet = packetConstructor.newInstance();
 			for (Field f : fields) {
 				f.setAccessible(true);
 				if (f.getName().equals("a"))
-					f.set(packet, effect.name);
+					f.set(packet, type.getName());
 				else if (f.getName().equals("b"))
 					f.set(packet, (float)location.getX());
 				else if (f.getName().equals("c"))
@@ -206,15 +134,15 @@ public enum ParticleEffect {
 				else if (f.getName().equals("d"))
 					f.set(packet, (float)location.getZ());
 				else if (f.getName().equals("e"))
-					f.set(packet, offsetX);
+					f.set(packet, this.radius);
 				else if (f.getName().equals("f"))
-					f.set(packet, offsetY);
+					f.set(packet, this.radius);
 				else if (f.getName().equals("g"))
-					f.set(packet, offsetZ);
+					f.set(packet, this.radius);
 				else if (f.getName().equals("h"))
-					f.set(packet, speed);
+					f.set(packet, this.speed);
 				else if (f.getName().equals("i"))
-					f.set(packet, count);
+					f.set(packet, this.count);
 			}
 		}
 		return packet;

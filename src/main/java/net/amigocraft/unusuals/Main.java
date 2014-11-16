@@ -24,6 +24,7 @@
 
 package net.amigocraft.unusuals;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,6 +39,7 @@ import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -47,7 +49,6 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.inventory.InventoryType.SlotType;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -58,6 +59,8 @@ public class Main extends JavaPlugin implements Listener {
 	public static HashMap<UUID, UnusualEffect> players = new HashMap<UUID, UnusualEffect>();
 	private static final int UNUSUAL_COLOR = 5;
 	private static final int EFFECT_COLOR = 7;
+
+	private static HashMap<String, UnusualEffect> effects = new HashMap<String, UnusualEffect>();
 
 	public void onEnable(){
 		plugin = this;
@@ -87,6 +90,53 @@ public class Main extends JavaPlugin implements Listener {
 			}
 		}
 
+		// dear Father, forgive me, for I have sinned
+		ConfigurationSection cs = getConfig().getConfigurationSection("effects");
+		if (cs != null) {
+			String[] nonSections = new String[]{"particles", "effects", "speed", "count"};
+			for (String k : cs.getKeys(false)) { // root effects
+				ConfigurationSection effect = cs.getConfigurationSection(k);
+				if (effect != null) {
+					List<ParticleEffect> pEffects = new ArrayList<ParticleEffect>();
+					if (effect.contains("particles") &&
+							effect.contains("speed") &&
+							effect.contains("count") &&
+							effect.contains("radius")) {
+						ParticleType type = ParticleType.valueOf(effect.getString("particles"));
+						if (type != null) {
+							ParticleEffect pEffect = new ParticleEffect(type, effect.getDouble("speed"),
+									effect.getInt("count"), effect.getDouble("radius"));
+							pEffects.add(pEffect);
+						}
+					}
+					keyLoop: // HOLY CRAP HOW DID I NOT KNOW ABOUT THIS FOR TWO AND A HALF YEARS
+					for (String subKey : effect.getKeys(true)) { // subkeys of effects
+						for (String ns : nonSections) {
+							if (k.endsWith(ns)) {
+								continue keyLoop;
+							}
+						}
+						ConfigurationSection subCs = effect.getConfigurationSection(subKey);
+						if (subCs != null) {
+							if (subCs.contains("particles") &&
+									subCs.contains("speed") &&
+									subCs.contains("count") &&
+									subCs.contains("radius")) {
+								ParticleType type = ParticleType.valueOf(subCs.getString("particles"));
+								if (type != null) {
+									ParticleEffect pEffect = new ParticleEffect(type, subCs.getDouble("speed"),
+											subCs.getInt("count"), subCs.getDouble("radius"));
+									pEffects.add(pEffect);
+								}
+							}
+						}
+					}
+					effects.put(effect.getName(), new UnusualEffect(effect.getName(), pEffects));
+				}
+			}
+		}
+		log.info("Loaded " + effects.size() + " effects");
+
 		for (Player p : Bukkit.getOnlinePlayers()){
 			checkForUnusual(p, p.getInventory().getHelmet());
 		}
@@ -115,21 +165,16 @@ public class Main extends JavaPlugin implements Listener {
 	}
 
 	public ItemStack createUnusual(Material type, String effect){
-		ConfigurationSection cs = getConfig().getConfigurationSection("effects." + effect);
-		if (cs != null){
-			ParticleEffect pEffect = ParticleEffect.valueOf(cs.getString("particles"));
-			if (pEffect != null){
-				ItemStack is = new ItemStack(type, 1);
-				ItemMeta meta = is.getItemMeta();
-				meta.setDisplayName("§" + UNUSUAL_COLOR + "Unusual " + WordUtils.capitalize(type.toString().toLowerCase().replace("_", " ")));
-				List<String> lore = new ArrayList<String>();
-				lore.add("§" + EFFECT_COLOR + "Effect: " + effect);
-				meta.setLore(lore);
-				is.setItemMeta(meta);
-				return is;
-			}
-			else
-				throw new IllegalArgumentException("Invalid particle type for effect \"" + effect + "\"");
+		UnusualEffect uEffect = effects.get(effect);
+		if (effect != null){
+			ItemStack is = new ItemStack(type, 1);
+			ItemMeta meta = is.getItemMeta();
+			meta.setDisplayName("§" + UNUSUAL_COLOR + "Unusual " + WordUtils.capitalize(type.toString().toLowerCase().replace("_", " ")));
+			List<String> lore = new ArrayList<String>();
+			lore.add("§" + EFFECT_COLOR + "Effect: " + effect);
+			meta.setLore(lore);
+			is.setItemMeta(meta);
+			return is;
 		}
 		else
 			throw new IllegalArgumentException("Effect \"" + effect + "\" does not exist!");
@@ -178,6 +223,16 @@ public class Main extends JavaPlugin implements Listener {
 					else
 						sender.sendMessage(ChatColor.RED + "You must be a player to use this command!");
 				}
+				else if (args[0].equalsIgnoreCase("reload")){
+					if (sender.hasPermission("unsuual.reload")){
+						Bukkit.getPluginManager().disablePlugin(plugin);
+						reloadConfig();
+						Bukkit.getPluginManager().enablePlugin(Bukkit.getPluginManager().getPlugin("Unusuals"));
+						sender.sendMessage(ChatColor.GREEN + "[Unusuals] Successfully reloaded!");
+					}
+					else
+						sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+				}
 				else
 					sender.sendMessage(ChatColor.RED + "Invalid arguments! Usage: /unusual [args]");
 			}
@@ -197,7 +252,7 @@ public class Main extends JavaPlugin implements Listener {
 								(e.getInventory().getType() == InventoryType.CRAFTING && e.getSlot() == 39))){
 					if (isUnusual(e.getCurrentItem())) {
 						if (!e.getViewers().isEmpty()) {
-							players.remove(((Player)(e.getWhoClicked())).getUniqueId()); // remove the unusual effect from the player
+							players.remove(((e.getWhoClicked())).getUniqueId()); // remove the unusual effect from the player
 						}
 					}
 					Main.checkForUnusual((Player)e.getWhoClicked(), e.getCursor());
@@ -225,14 +280,9 @@ public class Main extends JavaPlugin implements Listener {
 			if (isUnusual(itemstack)){
 				String effectName = itemstack.getItemMeta().getLore().get(0).replace("§" + EFFECT_COLOR +
 						"Effect: ", "");// extract the effect name
-				ConfigurationSection cs = Main.plugin.getConfig().getConfigurationSection("effects." + effectName);
-				if (cs != null){ // make sure the effect is defined
-					ParticleEffect pEffect = ParticleEffect.valueOf(cs.getString("particles")); // get the particle effect
-					if (pEffect != null){ // make sure the particle effect exists
-						UnusualEffect uEffect = new UnusualEffect(effectName, pEffect,
-								cs.getDouble("speed"), cs.getInt("count"), cs.getDouble("radius")); // construct the effect
-						players.put(player.getUniqueId(), uEffect);
-					}
+				UnusualEffect uEffect = effects.get(effectName);
+				if (uEffect != null){ // make sure the effect is loaded
+					players.put(player.getUniqueId(), uEffect);
 				}
 			}
 		}

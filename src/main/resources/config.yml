@@ -12,31 +12,68 @@ effects:
         speed: 0.02 # the speed of the particles
         count: 1 # the number of particles spawned each time the effect refreshes
         radius: 0.0001 # the area covered by the particles
-    Green Energy:
+    Green Confetti:
         particles: GREEN_SPARKLE
         speed: 1
         count: 1
         radius: 0.2
-    Purple Energy:
+    Purple Confetti:
         particles: ENDER
         speed: 0.2
         count: 2
         radius: 0.2
+    Purple Energy:
+        particles: PURPLE_SPARKLE
+        speed: 0.01
+        count: 2
+        radius: 0.1
     Smoking:
         particles: SMOKE
         speed: 0.01
         count: 1
         radius: 0.0001
-    Snowy Snow:
-        particles: FIREWORK_SPARK
+    Steaming:
+        particles: CLOUD
         speed: 0.01
         count: 2
-        radius: 0.5
+        radius: 0.2
     Hearts:
         particles: HEART
         speed: 0.001
         count: 1
         radius: 0.2
+    Blizzardy Storm:
+        cloud:
+            particles: CLOUD
+            speed: 0.005
+            count: 5
+            radius: 0.3
+        snow:
+            particles: FIREWORK_SPARK
+            speed: 0.01
+            count: 2
+            radius: 0.5
+    Stormy Storm:
+        cloud:
+            particles: CLOUD
+            speed: 0.005
+            count: 5
+            radius: 0.3
+        rain:
+            particles: SPLASH
+            speed: 0.007
+            count: 50
+            radius: 0.2
+    Music Notes:
+        particles: NOTE_BLOCK
+        speed: 0.001
+        count: 1
+        radius: 0.2
+    Floating Glyphs:
+        particles: ENCHANTMENT_TABLE
+        speed: 0.2
+        count: 3
+        radius: 0.3
         
 # Should the plugin auto-update?
 auto-update: true

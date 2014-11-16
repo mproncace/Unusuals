@@ -1,65 +1,43 @@
 package net.amigocraft.unusuals;
 
+import com.google.common.collect.Lists;
 import org.bukkit.entity.Player;
+
+import java.util.List;
 
 public class UnusualEffect {
 
 	private String name;
-	private ParticleEffect effect;
-	private double speed;
-	private int count;
-	private double radius;
-	
-	public UnusualEffect(String name, ParticleEffect effect, double speed, int count, double radius){
-		this.name = name;
-		this.effect = effect;
-		this.speed = speed;
-		this.count = count;
-		this.radius = radius;
+	private List<ParticleEffect> particles;
+
+	public UnusualEffect(String name, ParticleEffect particle){
+		this(name, Lists.asList(particle, new ParticleEffect[1]));
 	}
-	
+
+	public UnusualEffect(String name, List<ParticleEffect> particleEffects){
+		this.name = name;
+		this.particles = particleEffects;
+	}
+
 	public String getName(){
 		return name;
 	}
-	
+
 	public void setName(String name){
 		this.name = name;
 	}
-	
-	public ParticleEffect getEffect(){
-		return effect;
+
+	public List<ParticleEffect> getParticleEffects(){
+		return particles;
 	}
-	
-	public void setEffect(ParticleEffect effect){
-		this.effect = effect;
+
+	public void setParticleEffects(List<ParticleEffect> particles){
+		this.particles = particles;
 	}
-	
-	public double getSpeed(){
-		return speed;
-	}
-	
-	public void setSpeed(double speed){
-		this.speed = speed;
-	}
-	
-	public int getCount(){
-		return count;
-	}
-	
-	public void setCount(int count){
-		this.count = count;
-	}
-	
-	public double getRadius(){
-		return radius;
-	}
-	
-	public void setRadius(int radius){
-		this.radius = radius;
-	}
-	
+
 	public void display(Player player){
-		ParticleEffect.sendToLocation(effect, player.getLocation().add(0, 2.15, 0), (float)radius, (float)radius, (float)radius, (float)speed, count);
+		for (ParticleEffect pe : particles)
+			pe.sendToLocation(player.getLocation().add(0, 2.15, 0));
 	}
-	
+
 }
