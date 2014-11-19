@@ -182,7 +182,7 @@ public class Main extends JavaPlugin implements Listener {
 
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args){
-		if (label.equalsIgnoreCase("unusual")){
+		if (label.equalsIgnoreCase("unusual") || label.equalsIgnoreCase("unusuals")){
 			if (args.length > 0){
 				if (args[0].equalsIgnoreCase("spawn")){
 					if (sender instanceof Player){
@@ -242,7 +242,7 @@ public class Main extends JavaPlugin implements Listener {
 					sender.sendMessage(ChatColor.RED + "Invalid arguments! Usage: /unusual [args]");
 			}
 			else
-				sender.sendMessage(ChatColor.RED + "Too few arguments! Usage: /unusual [args]");
+				sender.sendMessage(ChatColor.LIGHT_PURPLE + "This server is running Unusuals v" + plugin.getDescription().getVersion() + " by Maxim Roncace");
 			return true;
 		}
 		return false;

@@ -4,7 +4,7 @@
     <groupId>net.amigocraft.unusuals</groupId>
     <artifactId>unusuals</artifactId>
     <packaging>jar</packaging>
-    <version>0.2.1-SNAPSHOT</version>
+    <version>0.2.1</version>
     <name>Unusuals</name>
     <url>http://dev.bukkit.org/bukkit-plugins/unusuals/</url>
     <description>TF2 Unusuals, in Minecraft!</description>

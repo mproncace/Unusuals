@@ -1,12 +1,15 @@
 name: Unusuals
-version: 0.2.1-SNAPSHOT
+version: 0.2.1
 main: net.amigocraft.unusuals.Main
 description: Unusual hats, in Minecraft!
+author: Maxim Roncacé
+website: http://dev.bukkit.org/bukkit-plugins/unusuals
 
 commands:
   unusual:
     description: The main command for the plugin.
     usage: /unusual [args]
+    aliases: unusuals
     
 permissions:
   unusual.spawn:
