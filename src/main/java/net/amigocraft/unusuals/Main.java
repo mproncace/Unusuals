@@ -200,22 +200,27 @@ public class Main extends JavaPlugin implements Listener {
 										}
 										catch (IllegalArgumentException ex){
 											if (ex.getMessage().contains("particle"))
-												sender.sendMessage(ChatColor.RED + "The specified effect has an invalid particle type. " +
+												sender.sendMessage(ChatColor.RED +
+														"The specified effect has an invalid particle type. " +
 														"Please report this to an administrator.");
 											else
-												sender.sendMessage(ChatColor.RED + "Invalid effect! Usage: /unusual spawn " + mat.toString() +
+												sender.sendMessage(ChatColor.RED +
+														"Invalid effect! Usage: /unusual spawn " + mat.toString() +
 														" [effect name]");
 										}
 									}
 									else
-										sender.sendMessage(ChatColor.RED + "Too few arguments! Usage: /unusual spawn " + mat.toString() +
+										sender.sendMessage(ChatColor.RED + "Too few arguments! Usage: /unusual spawn " +
+												mat.toString() +
 												" [effect name]");
 								}
 								else
-									sender.sendMessage(ChatColor.RED + "Invalid material! Usage: /unusual spawn [materal] [effect name]");
+									sender.sendMessage(ChatColor.RED +
+											"Invalid material! Usage: /unusual spawn [materal] [effect name]");
 							}
 							else
-								sender.sendMessage(ChatColor.RED + "Too few arguments! Usage: /unusual spawn [material] [effect name]");
+								sender.sendMessage(ChatColor.RED +
+										"Too few arguments! Usage: /unusual spawn [material] [effect name]");
 						}
 						else
 							sender.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
@@ -251,11 +256,11 @@ public class Main extends JavaPlugin implements Listener {
 						((e.getInventory().getType() == InventoryType.PLAYER && e.getSlot() == 5) || // wtf minecraft
 								(e.getInventory().getType() == InventoryType.CRAFTING && e.getSlot() == 39))){
 					if (isUnusual(e.getCurrentItem())) {
-						if (!e.getViewers().isEmpty()) {
-							players.remove(((e.getWhoClicked())).getUniqueId()); // remove the unusual effect from the player
-						}
+						players.remove(((e.getWhoClicked())).getUniqueId()); // remove the unusual effect
 					}
-					Main.checkForUnusual((Player)e.getWhoClicked(), e.getCursor());
+					else {
+						Main.checkForUnusual((Player) e.getWhoClicked(), e.getCursor());
+					}
 				}
 			}
 		}
