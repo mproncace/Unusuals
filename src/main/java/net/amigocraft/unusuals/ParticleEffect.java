@@ -25,6 +25,10 @@ public class ParticleEffect {
 	private static Method player_sendPacket = null;
 	private static HashMap<Class<? extends Entity>, Method> handles = new HashMap<Class<? extends Entity>, Method>();
 
+	private static boolean newParticlePacketConstructor = false;
+	private static Class<Enum> enumParticle = null;
+	private static Constructor<?> enumParticleConstructor = null;
+
 	private ParticleType type;
 	private double speed;
 	private int count;
@@ -32,22 +36,36 @@ public class ParticleEffect {
 
 	static {
 		String vString = getVersion().replace("v", "");
-		float v = 0;
-		if (!vString.equals("")){
+		double v = 0;
+		if (!vString.isEmpty()){
 			String[] array = vString.split("_");
-			v = Float.parseFloat(array[0] + "." + array[1]);
+			v = Double.parseDouble(array[0] + "." + array[1]);
 		}
 		try {
+			Main.log.info("Server major/minor version: " + v);
 			if (v < 1.7) {
+				Main.log.info("Hooking into pre-Netty NMS classes");
 				netty = false;
-				packetClass = getCraftClass("Packet63WorldParticles");
+				packetClass = getNmsClass("Packet63WorldParticles");
 				packetConstructor = packetClass.getConstructor();
 				fields = packetClass.getDeclaredFields();
 			}
 			else {
-				packetClass = getCraftClass("PacketPlayOutWorldParticles");
-				packetConstructor = packetClass.getConstructor(String.class, float.class, float.class, float.class, float.class,
-						float.class, float.class, float.class, int.class);
+				Main.log.info("Hooking into Netty NMS classes");
+				packetClass = getNmsClass("PacketPlayOutWorldParticles");
+				if (v < 1.8){
+					Main.log.info("Version is < 1.8 - using old packet constructor");
+					packetConstructor = packetClass.getConstructor(String.class, float.class, float.class, float.class,
+							float.class, float.class, float.class, float.class, int.class);
+				}
+				else { // use the new constructor for 1.8
+					Main.log.info("Version is >= 1.8 - using new packet constructor");
+					newParticlePacketConstructor = true;
+					enumParticle = (Class<Enum>)getNmsClass("EnumParticle");
+					packetConstructor = packetClass.getDeclaredConstructor(enumParticle, boolean.class, float.class,
+							float.class, float.class, float.class, float.class, float.class, float.class, int.class,
+							int[].class);
+				}
 			}
 		}
 		catch (Exception ex){
@@ -116,10 +134,19 @@ public class ParticleEffect {
 		}
 		Object packet;
 		if (netty) {
-			packet = packetConstructor.newInstance(type.getName(),
-					(float)location.getX(), (float)location.getY(), (float)location.getZ(),
-					(float)this.radius, (float)this.radius, (float)this.radius,
-					(float)this.speed, this.count);
+			if (newParticlePacketConstructor){
+				Object particleType = enumParticle.getEnumConstants()[type.getId()];
+				packet = packetConstructor.newInstance(particleType,
+						true, (float)location.getX(), (float)location.getY(), (float)location.getZ(),
+						(float)this.radius, (float)this.radius, (float)this.radius,
+						(float)this.speed, this.count, new int[0]);
+			}
+			else {
+				packet = packetConstructor.newInstance(type.getName(),
+						(float)location.getX(), (float)location.getY(), (float)location.getZ(),
+						(float)this.radius, (float)this.radius, (float)this.radius,
+						(float)this.speed, this.count);
+			}
 		}
 		else {
 			packet = packetConstructor.newInstance();
@@ -176,7 +203,7 @@ public class ParticleEffect {
 		}
 	}
 
-	private static Class<?> getCraftClass(String name){
+	private static Class<?> getNmsClass(String name){
 		String version = getVersion();
 		String className = "net.minecraft.server." + version + name;
 		Class<?> clazz = null;

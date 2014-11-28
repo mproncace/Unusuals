@@ -67,7 +67,7 @@ public class Main extends JavaPlugin implements Listener {
 		log = getLogger();
 
 		ParticleEffect.isCompatible();
-		if (!plugin.isEnabled())
+		if (plugin == null || !plugin.isEnabled())
 			return;
 
 		Bukkit.getPluginManager().registerEvents(this, this);
