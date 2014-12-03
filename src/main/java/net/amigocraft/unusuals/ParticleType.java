@@ -57,7 +57,7 @@ public enum ParticleType {
 	 *
 	 * @return The name of the particle effect
 	 */
-	String getName(){
+	public String getName(){
 		return name;
 	}
 
@@ -66,7 +66,7 @@ public enum ParticleType {
 	 *
 	 * @return The ID of the particle effect
 	 */
-	int getId(){
+	public int getId(){
 		return id;
 	}
 
@@ -75,7 +75,7 @@ public enum ParticleType {
 	 *
 	 * @return the legacy ID of the particle effect (or -1 if introduced after 1.7)
 	 */
-	int getLegacyId(){
+	public int getLegacyId(){
 		return legacyId;
 	}
 }

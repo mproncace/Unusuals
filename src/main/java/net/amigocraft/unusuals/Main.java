@@ -24,7 +24,6 @@
 
 package net.amigocraft.unusuals;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,6 +31,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import net.amigocraft.unusuals.nms.CraftBukkitHook;
+import net.amigocraft.unusuals.nms.NmsHook;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -39,7 +40,6 @@ import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -60,13 +60,25 @@ public class Main extends JavaPlugin implements Listener {
 	private static final int UNUSUAL_COLOR = 5;
 	private static final int EFFECT_COLOR = 7;
 
+	public static NmsHook hook;
+
 	private static HashMap<String, UnusualEffect> effects = new HashMap<String, UnusualEffect>();
 
 	public void onEnable(){
 		plugin = this;
 		log = getLogger();
 
-		ParticleEffect.isCompatible();
+		try {
+			Class.forName("org.bukkit.craftbukkit.Main");
+			hook = new CraftBukkitHook();
+		}
+		catch (ClassNotFoundException ex){
+			log.severe("Incompatible server software! Cannot continue, disabling...");
+			Bukkit.getPluginManager().disablePlugin(this);
+			return;
+		}
+
+		hook.isCompatible();
 		if (plugin == null || !plugin.isEnabled())
 			return;
 
@@ -90,7 +102,6 @@ public class Main extends JavaPlugin implements Listener {
 			}
 		}
 
-		// dear Father, forgive me, for I have sinned
 		ConfigurationSection cs = getConfig().getConfigurationSection("effects");
 		if (cs != null) {
 			String[] nonSections = new String[]{"particles", "effects", "speed", "count"};
@@ -104,8 +115,8 @@ public class Main extends JavaPlugin implements Listener {
 							effect.contains("radius")) {
 						ParticleType type = ParticleType.valueOf(effect.getString("particles"));
 						if (type != null) {
-							ParticleEffect pEffect = new ParticleEffect(type, effect.getDouble("speed"),
-									effect.getInt("count"), effect.getDouble("radius"));
+							ParticleEffect pEffect = new ParticleEffect(type, (float)effect.getDouble("speed"),
+									effect.getInt("count"), (float)effect.getDouble("radius"));
 							pEffects.add(pEffect);
 						}
 					}
@@ -124,8 +135,8 @@ public class Main extends JavaPlugin implements Listener {
 									subCs.contains("radius")) {
 								ParticleType type = ParticleType.valueOf(subCs.getString("particles"));
 								if (type != null) {
-									ParticleEffect pEffect = new ParticleEffect(type, subCs.getDouble("speed"),
-											subCs.getInt("count"), subCs.getDouble("radius"));
+									ParticleEffect pEffect = new ParticleEffect(type, (float)subCs.getDouble("speed"),
+											subCs.getInt("count"), (float)subCs.getDouble("radius"));
 									pEffects.add(pEffect);
 								}
 							}
