@@ -33,14 +33,19 @@ public class CraftBukkitHook implements NmsHook {
 		Main.log.info("This server appears to be running Craftbukkit (or some modification of it)");
 		Main.log.info("Loading appropriate hooks...");
 		String vString = getVersion().replace("v", "");
-		double v = 0;
+		int v = 0;
 		if (!vString.isEmpty()){
 			String[] array = vString.split("_");
-			v = Double.parseDouble(array[0] + "." + array[1]);
+			try {
+				v = Integer.parseInt(array[0] + array[1] + array[2]);
+			} catch (Exception e) {
+				v = Integer.parseInt(array[0] + array[1]);
+			}
+			
 		}
 		try {
 			Main.log.info("Server major/minor version: " + v);
-			if (v < 1.7) {
+			if (v < 17) {
 				Main.log.info("Hooking into pre-Netty NMS classes");
 				netty = false;
 				particlePacket = getNmsClass("Packet63WorldParticles");
@@ -50,7 +55,7 @@ public class CraftBukkitHook implements NmsHook {
 			else {
 				Main.log.info("Hooking into Netty NMS classes");
 				particlePacket = getNmsClass("PacketPlayOutWorldParticles");
-				if (v < 1.8){
+				if (v < 18){
 					Main.log.info("Version is < 1.8 - using old packet constructor");
 					packetConstructor = particlePacket.getConstructor(String.class, float.class, float.class, float.class,
 							float.class, float.class, float.class, float.class, int.class);
