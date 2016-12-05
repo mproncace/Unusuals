@@ -4,31 +4,42 @@
     <groupId>net.amigocraft.unusuals</groupId>
     <artifactId>unusuals</artifactId>
     <packaging>jar</packaging>
-    <version>0.3.0-SNAPSHOT</version>
+    <version>0.4.0-SNAPSHOT</version>
     <name>Unusuals</name>
     <url>http://dev.bukkit.org/bukkit-plugins/unusuals/</url>
     <description>TF2 Unusuals, in Minecraft!</description>
-    <ciManagement>
-        <system>jenkins</system>
-        <url>http://ci.amigocraft.net/</url>
-    </ciManagement>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-    <repositories>
-        <repository>
-            <id>bukkit-repo</id>
-            <url>http://repo.amigocraft.net/content/groups/public/</url>
-        </repository>
-    </repositories>
-    <dependencies>
-        <dependency>
+   <repositories>
+    <repository>
+        <id>spigot-repo</id>
+        <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+    </repository>
+</repositories>
+<dependencies>
+    <!--Spigot API-->
+    <dependency>
+           <groupId>org.spigotmc</groupId>
+           <artifactId>spigot-api</artifactId>
+           <version>1.10.2-R0.1-SNAPSHOT</version>
+           <scope>provided</scope>
+    </dependency>
+    <!--Bukkit API-->
+    <dependency>
             <groupId>org.bukkit</groupId>
             <artifactId>bukkit</artifactId>
+            <version>1.10.2-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
-            <version>1.8-R0.1-SNAPSHOT</version>
-        </dependency>
-    </dependencies>
+    </dependency>
+    <!--CraftBukkit-->
+    <dependency>
+            <groupId>org.bukkit</groupId>
+            <artifactId>craftbukkit</artifactId>
+            <version>1.10.2-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+    </dependency>
+</dependencies>
     <build>
         <defaultGoal>clean package</defaultGoal>
         <plugins>
@@ -37,8 +48,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.1</version>
                 <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
+                    <source>1.7</source>
+                    <target>1.7</target>
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>

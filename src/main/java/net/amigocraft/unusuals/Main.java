@@ -33,6 +33,7 @@ import java.util.logging.Logger;
 
 import net.amigocraft.unusuals.nms.CraftBukkitHook;
 import net.amigocraft.unusuals.nms.NmsHook;
+
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -45,6 +46,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCreativeEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.inventory.InventoryType.SlotType;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -276,6 +278,27 @@ public class Main extends JavaPlugin implements Listener {
 			}
 		}
 	}
+	
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+	public void onCreativeInventoryEvent(InventoryCreativeEvent e){
+		synchronized(players){
+			if (e.getInventory().getHolder() instanceof Player){
+				if (e.getSlotType() == SlotType.ARMOR &&
+						((e.getInventory().getType() == InventoryType.PLAYER && e.getSlot() == 5) || // wtf minecraft
+								(e.getInventory().getType() == InventoryType.CRAFTING && e.getSlot() == 39))){
+					if (isUnusual(e.getCurrentItem())) {
+						players.remove(((e.getWhoClicked())).getUniqueId()); // remove the unusual effect
+					}
+					else {
+						Main.checkForUnusual((Player) e.getWhoClicked(), e.getCursor());
+					}
+				}
+			}
+		}
+	}
+	
+	
+	
 
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 	public void onPlayerJoin(PlayerJoinEvent e){
