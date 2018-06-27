@@ -4,7 +4,7 @@
     <groupId>net.caseif.unusuals</groupId>
     <artifactId>unusuals</artifactId>
     <packaging>jar</packaging>
-    <version>0.4.0-SNAPSHOT</version>
+    <version>0.4.0</version>
     <name>Unusuals</name>
     <url>http://dev.bukkit.org/projects/unusuals/</url>
     <description>TF2 Unusuals, in Minecraft!</description>
