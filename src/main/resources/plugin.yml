@@ -1,9 +1,9 @@
 name: Unusuals
-version: 0.3.0-SNAPSHOT
-main: net.amigocraft.unusuals.Main
+version: 0.4.0-SNAPSHOT
+main: net.caseif.unusuals.Main
 description: Unusual hats, in Minecraft!
 author: Maxim Roncacé
-website: http://dev.bukkit.org/bukkit-plugins/unusuals
+website: http://dev.bukkit.org/projects/unusuals
 
 commands:
   unusual:
