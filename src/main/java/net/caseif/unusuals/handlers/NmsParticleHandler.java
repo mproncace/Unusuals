@@ -23,7 +23,6 @@
  */
 package net.caseif.unusuals.handlers;
 
-import net.caseif.unusuals.Main;
 import net.caseif.unusuals.ParticleEffect;
 import net.caseif.unusuals.ParticleType;
 import net.caseif.unusuals.nms.NmsHook;
@@ -50,7 +49,7 @@ public class NmsParticleHandler implements IParticleHandler {
                     (float) loc.getX(), (float) loc.getY(), (float) loc.getZ(),
                     effect.getRadius(), effect.getRadius(), effect.getRadius(), effect.getSpeed(), effect.getCount(),
                     false, new int[0]);
-            for (Player player : Main.getOnlinePlayers()) {
+            for (Player player : Bukkit.getOnlinePlayers()) {
                 hook.sendPacket(packet, player);
             }
         } catch (Exception e) {

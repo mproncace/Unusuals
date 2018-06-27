@@ -23,7 +23,6 @@
  */
 package net.caseif.unusuals.typeprovider;
 
-import net.caseif.unusuals.ParticleEffect;
 import net.caseif.unusuals.ParticleType;
 
 public class NmsParticleTypeProvider implements IParticleTypeProvider {

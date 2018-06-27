@@ -27,7 +27,6 @@ import net.caseif.unusuals.handlers.BukkitParticleHandler;
 import net.caseif.unusuals.handlers.IParticleHandler;
 import net.caseif.unusuals.handlers.NmsParticleHandler;
 import net.caseif.unusuals.nms.CraftBukkitHook;
-import net.caseif.unusuals.nms.NmsHook;
 import net.caseif.unusuals.typeprovider.BukkitParticleTypeProvider;
 import net.caseif.unusuals.typeprovider.IParticleTypeProvider;
 import net.caseif.unusuals.typeprovider.NmsParticleTypeProvider;
@@ -51,10 +50,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -142,7 +138,7 @@ public class Main extends JavaPlugin implements Listener {
         }
         log.info("Loaded " + effects.size() + " effects");
 
-        for (Player p : getOnlinePlayers()) {
+        for (Player p : Bukkit.getOnlinePlayers()) {
             checkForUnusual(p, p.getInventory().getHelmet());
         }
 
@@ -303,25 +299,6 @@ public class Main extends JavaPlugin implements Listener {
             if (uEffect != null) { // make sure the effect is loaded
                 players.put(player.getUniqueId(), uEffect);
             }
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    public static Collection<Player> getOnlinePlayers() {
-        try {
-            if (Bukkit.class.getMethod("getOnlinePlayers").getReturnType() == Collection.class) {
-                return ((Collection<Player>) Bukkit.class.getMethod("getOnlinePlayers").invoke(null));
-            } else {
-                return Arrays.asList(((Player[]) Bukkit.class.getMethod("getOnlinePlayers").invoke(null)));
-            }
-        } catch (InvocationTargetException ex) {
-            throw new RuntimeException(ex);
-        } catch (NoSuchMethodException ex) {
-            // should never happen
-            throw new UnsupportedOperationException("Jeepers creepers!", ex);
-        } catch (IllegalAccessException ex) {
-            // should also never happen
-            throw new UnsupportedOperationException("Jeepers creepers!", ex);
         }
     }
 

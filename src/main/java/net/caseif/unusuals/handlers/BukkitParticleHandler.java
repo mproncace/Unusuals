@@ -23,7 +23,6 @@
  */
 package net.caseif.unusuals.handlers;
 
-import net.caseif.unusuals.Main;
 import net.caseif.unusuals.ParticleEffect;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -34,7 +33,7 @@ public class BukkitParticleHandler implements IParticleHandler {
 
     @Override
     public void sendToLocation(ParticleEffect effect, Location loc) {
-        for (Player player : Main.getOnlinePlayers()) {
+        for (Player player : Bukkit.getOnlinePlayers()) {
             player.spawnParticle((Particle) effect.getType(), loc, effect.getCount(), effect.getRadius(),
                     effect.getRadius(), effect.getRadius(), effect.getSpeed());
         }
