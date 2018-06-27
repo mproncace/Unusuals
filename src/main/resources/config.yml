@@ -8,27 +8,27 @@ effect-interval: 5
 # Define your effects here!
 effects:
     Burning Flames:
-        particles: FIRE # the particle type to display
+        particles: FLAME # the particle type to display
         speed: 0.02 # the speed of the particles
         count: 1 # the number of particles spawned each time the effect refreshes
         radius: 0.0001 # the area covered by the particles
     Green Confetti:
-        particles: GREEN_SPARKLE
+        particles: VILLAGER_HAPPY
         speed: 1
         count: 1
         radius: 0.2
     Purple Confetti:
-        particles: ENDER
+        particles: PORTAL
         speed: 0.2
         count: 2
         radius: 0.2
     Purple Energy:
-        particles: PURPLE_SPARKLE
+        particles: SPELL_WITCH
         speed: 0.01
         count: 2
         radius: 0.1
     Smoking:
-        particles: SMOKE
+        particles: SMOKE_NORMAL
         speed: 0.01
         count: 1
         radius: 0.0001
@@ -49,7 +49,7 @@ effects:
             count: 5
             radius: 0.3
         snow:
-            particles: FIREWORK_SPARK
+            particles: FIREWORKS_SPARK
             speed: 0.01
             count: 2
             radius: 0.5
@@ -60,12 +60,12 @@ effects:
             count: 5
             radius: 0.3
         rain:
-            particles: SPLASH
+            particles: WATER_SPLASH
             speed: 0.007
             count: 50
             radius: 0.2
     Music Notes:
-        particles: NOTE_BLOCK
+        particles: NOTE
         speed: 0.001
         count: 1
         radius: 0.2

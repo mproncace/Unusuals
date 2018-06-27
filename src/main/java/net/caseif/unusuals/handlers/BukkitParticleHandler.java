@@ -21,64 +21,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package net.caseif.unusuals;
+package net.caseif.unusuals.handlers;
 
+import net.caseif.unusuals.Main;
+import net.caseif.unusuals.ParticleEffect;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 
-public class ParticleEffect {
+public class BukkitParticleHandler implements IParticleHandler {
 
-    private Object type;
-    private float speed;
-    private int count;
-    private float radius;
-
-    ParticleEffect(Object type, float speed, int count, float radius) {
-        this.type = type;
-        this.speed = speed;
-        this.count = count;
-        this.radius = radius;
-    }
-
-    public Object getType() {
-        return type;
-    }
-
-    /**
-     * Gets the speed of the particle effect
-     *
-     * @return The speed of the particle effect
-     */
-    public float getSpeed() {
-        return speed;
-    }
-
-    /**
-     * Gets the number of particles in the effect
-     *
-     * @return The number of particles in the effect
-     */
-    public int getCount() {
-        return count;
-    }
-
-    /**
-     * Gets the radius of the particle effect
-     *
-     * @return The radius of the particle effect
-     */
-    public float getRadius() {
-        return radius;
-    }
-
-    /**
-     * Send a particle effect to all players
-     *
-     * @param location The location to send the effect to
-     */
-    public void sendToLocation(Location location) {
-        Main.handler.sendToLocation(this, location);
+    @Override
+    public void sendToLocation(ParticleEffect effect, Location loc) {
+        for (Player player : Main.getOnlinePlayers()) {
+            player.spawnParticle((Particle) effect.getType(), loc, effect.getCount(), effect.getRadius(),
+                    effect.getRadius(), effect.getRadius(), effect.getSpeed());
+        }
     }
 
 }

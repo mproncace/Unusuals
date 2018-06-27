@@ -23,8 +23,14 @@
  */
 package net.caseif.unusuals;
 
+import net.caseif.unusuals.handlers.BukkitParticleHandler;
+import net.caseif.unusuals.handlers.IParticleHandler;
+import net.caseif.unusuals.handlers.NmsParticleHandler;
 import net.caseif.unusuals.nms.CraftBukkitHook;
 import net.caseif.unusuals.nms.NmsHook;
+import net.caseif.unusuals.typeprovider.BukkitParticleTypeProvider;
+import net.caseif.unusuals.typeprovider.IParticleTypeProvider;
+import net.caseif.unusuals.typeprovider.NmsParticleTypeProvider;
 import org.apache.commons.lang.WordUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -45,7 +51,10 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -55,11 +64,12 @@ public class Main extends JavaPlugin implements Listener {
 
     public static JavaPlugin plugin;
     public static Logger log;
-    public static HashMap<UUID, UnusualEffect> players = new HashMap<UUID, UnusualEffect>();
-    private static final int UNUSUAL_COLOR = 5;
-    private static final int EFFECT_COLOR = 7;
+    private static HashMap<UUID, UnusualEffect> players = new HashMap<UUID, UnusualEffect>();
+    private static final ChatColor UNUSUAL_COLOR = ChatColor.DARK_PURPLE;
+    private static final ChatColor EFFECT_COLOR = ChatColor.GRAY;
 
-    public static NmsHook hook;
+    static IParticleHandler handler;
+    private static IParticleTypeProvider typeProvider;
 
     private static HashMap<String, UnusualEffect> effects = new HashMap<String, UnusualEffect>();
 
@@ -68,15 +78,21 @@ public class Main extends JavaPlugin implements Listener {
         log = getLogger();
 
         try {
-            Class.forName("org.bukkit.craftbukkit.Main");
-            hook = new CraftBukkitHook();
+            Class.forName("org.bukkit.Particle");
+            handler = new BukkitParticleHandler();
+            typeProvider = new BukkitParticleTypeProvider();
         } catch (ClassNotFoundException ex) {
-            log.severe("Incompatible server software! Cannot continue, disabling...");
-            Bukkit.getPluginManager().disablePlugin(this);
-            return;
+            try {
+                Class.forName("org.bukkit.craftbukkit.Main");
+                handler = new NmsParticleHandler(new CraftBukkitHook());
+                typeProvider = new NmsParticleTypeProvider();
+            } catch (ClassNotFoundException ex2) {
+                log.severe("Incompatible server software! Cannot continue, disabling...");
+                Bukkit.getPluginManager().disablePlugin(this);
+                return;
+            }
         }
 
-        hook.isCompatible();
         if (plugin == null || !plugin.isEnabled()) {
             return;
         }
@@ -107,19 +123,8 @@ public class Main extends JavaPlugin implements Listener {
                 ConfigurationSection effect = cs.getConfigurationSection(k);
                 if (effect != null) {
                     List<ParticleEffect> pEffects = new ArrayList<ParticleEffect>();
-                    if (effect.contains("particles") &&
-                            effect.contains("speed") &&
-                            effect.contains("count") &&
-                            effect.contains("radius")) {
-                        ParticleType type = ParticleType.valueOf(effect.getString("particles"));
-                        if (type != null) {
-                            ParticleEffect pEffect = new ParticleEffect(type, (float) effect.getDouble("speed"),
-                                    effect.getInt("count"), (float) effect.getDouble("radius"));
-                            pEffects.add(pEffect);
-                        }
-                    }
+                    pEffects.add(parseEffect(effect));
                     keyLoop:
-                    // HOLY CRAP HOW DID I NOT KNOW ABOUT THIS FOR TWO AND A HALF YEARS
                     for (String subKey : effect.getKeys(true)) { // subkeys of effects
                         for (String ns : nonSections) {
                             if (k.endsWith(ns)) {
@@ -128,17 +133,7 @@ public class Main extends JavaPlugin implements Listener {
                         }
                         ConfigurationSection subCs = effect.getConfigurationSection(subKey);
                         if (subCs != null) {
-                            if (subCs.contains("particles") &&
-                                    subCs.contains("speed") &&
-                                    subCs.contains("count") &&
-                                    subCs.contains("radius")) {
-                                ParticleType type = ParticleType.valueOf(subCs.getString("particles"));
-                                if (type != null) {
-                                    ParticleEffect pEffect = new ParticleEffect(type, (float) subCs.getDouble("speed"),
-                                            subCs.getInt("count"), (float) subCs.getDouble("radius"));
-                                    pEffects.add(pEffect);
-                                }
-                            }
+                            pEffects.add(parseEffect(subCs));
                         }
                     }
                     effects.put(effect.getName(), new UnusualEffect(effect.getName(), pEffects));
@@ -147,20 +142,18 @@ public class Main extends JavaPlugin implements Listener {
         }
         log.info("Loaded " + effects.size() + " effects");
 
-        for (Player p : Bukkit.getOnlinePlayers()) {
+        for (Player p : getOnlinePlayers()) {
             checkForUnusual(p, p.getInventory().getHelmet());
         }
 
         Bukkit.getScheduler().runTaskTimer(this, new Runnable() {
             public void run() {
-                synchronized (players) {
-                    for (UUID p : players.keySet()) {
-                        Player pl = Bukkit.getPlayer(p);
-                        if (pl != null) {
-                            players.get(p).display(pl);
-                        } else {
-                            players.remove(p);
-                        }
+                for (UUID p : players.keySet()) {
+                    Player pl = Bukkit.getPlayer(p);
+                    if (pl != null) {
+                        players.get(p).display(pl);
+                    } else {
+                        players.remove(p);
                     }
                 }
             }
@@ -169,26 +162,40 @@ public class Main extends JavaPlugin implements Listener {
         log.info(this + " has been enabled!");
     }
 
+    private ParticleEffect parseEffect(ConfigurationSection subCs) {
+        if (subCs.contains("particles") &&
+                subCs.contains("speed") &&
+                subCs.contains("count") &&
+                subCs.contains("radius")) {
+            Object type = typeProvider.getTypeFromId(subCs.getString("particles"));
+            if (type != null) {
+                return new ParticleEffect(type, (float) subCs.getDouble("speed"),
+                        subCs.getInt("count"), (float) subCs.getDouble("radius"));
+            }
+        }
+        return null;
+    }
+
     public void onDisable() {
         log.info(this + " has been disabled!");
         log = null;
         plugin = null;
     }
 
-    public ItemStack createUnusual(Material type, String effect) {
+    private ItemStack createUnusual(Material type, String effect) {
         UnusualEffect uEffect = effects.get(effect);
-        if (effect != null) {
-            ItemStack is = new ItemStack(type, 1);
-            ItemMeta meta = is.getItemMeta();
-            meta.setDisplayName("§" + UNUSUAL_COLOR + "Unusual " + WordUtils.capitalize(type.toString().toLowerCase().replace("_", " ")));
-            List<String> lore = new ArrayList<String>();
-            lore.add("§" + EFFECT_COLOR + "Effect: " + effect);
-            meta.setLore(lore);
-            is.setItemMeta(meta);
-            return is;
-        } else {
+        if (uEffect == null) {
             throw new IllegalArgumentException("Effect \"" + effect + "\" does not exist!");
         }
+
+        ItemStack is = new ItemStack(type, 1);
+        ItemMeta meta = is.getItemMeta();
+        meta.setDisplayName(UNUSUAL_COLOR + "Unusual " + WordUtils.capitalize(type.toString().toLowerCase().replace("_", " ")));
+        List<String> lore = new ArrayList<String>();
+        lore.add(EFFECT_COLOR + "Effect: " + effect);
+        meta.setLore(lore);
+        is.setItemMeta(meta);
+        return is;
     }
 
     @Override
@@ -261,16 +268,14 @@ public class Main extends JavaPlugin implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onInventoryClick(InventoryClickEvent e) {
-        synchronized (players) {
-            if (e.getInventory().getHolder() instanceof Player) {
-                if (e.getSlotType() == SlotType.ARMOR &&
-                        ((e.getInventory().getType() == InventoryType.PLAYER && e.getSlot() == 5) || // wtf minecraft
-                                (e.getInventory().getType() == InventoryType.CRAFTING && e.getSlot() == 39))) {
-                    if (isUnusual(e.getCurrentItem())) {
-                        players.remove(((e.getWhoClicked())).getUniqueId()); // remove the unusual effect
-                    } else {
-                        Main.checkForUnusual((Player) e.getWhoClicked(), e.getCursor());
-                    }
+        if (e.getInventory().getHolder() instanceof Player) {
+            if (e.getSlotType() == SlotType.ARMOR &&
+                    ((e.getInventory().getType() == InventoryType.PLAYER && e.getSlot() == 5) || // wtf minecraft
+                            (e.getInventory().getType() == InventoryType.CRAFTING && e.getSlot() == 39))) {
+                if (isUnusual(e.getCurrentItem())) {
+                    players.remove(((e.getWhoClicked())).getUniqueId()); // remove the unusual effect
+                } else {
+                    Main.checkForUnusual((Player) e.getWhoClicked(), e.getCursor());
                 }
             }
         }
@@ -281,25 +286,42 @@ public class Main extends JavaPlugin implements Listener {
         checkForUnusual(e.getPlayer(), e.getPlayer().getInventory().getHelmet());
     }
 
-    public static boolean isUnusual(ItemStack itemstack) {
+    private static boolean isUnusual(ItemStack itemstack) {
         return itemstack != null &&
                 itemstack.getItemMeta() != null &&
                 itemstack.getItemMeta().getLore() != null &&
                 !itemstack.getItemMeta().getLore().isEmpty() &&
-                itemstack.getItemMeta().getDisplayName().startsWith("§" + UNUSUAL_COLOR + "Unusual ") &&
-                itemstack.getItemMeta().getLore().get(0).startsWith("§" + EFFECT_COLOR + "Effect: ");
+                itemstack.getItemMeta().getDisplayName().startsWith(UNUSUAL_COLOR + "Unusual ") &&
+                itemstack.getItemMeta().getLore().get(0).startsWith(EFFECT_COLOR + "Effect: ");
     }
 
-    public static void checkForUnusual(Player player, ItemStack itemstack) {
-        synchronized (players) {
-            if (isUnusual(itemstack)) {
-                String effectName = itemstack.getItemMeta().getLore().get(0).replace("§" + EFFECT_COLOR +
-                        "Effect: ", "");// extract the effect name
-                UnusualEffect uEffect = effects.get(effectName);
-                if (uEffect != null) { // make sure the effect is loaded
-                    players.put(player.getUniqueId(), uEffect);
-                }
+    private static void checkForUnusual(Player player, ItemStack itemstack) {
+        if (isUnusual(itemstack)) {
+            String effectName = itemstack.getItemMeta().getLore().get(0).replace(EFFECT_COLOR +
+                    "Effect: ", "");// extract the effect name
+            UnusualEffect uEffect = effects.get(effectName);
+            if (uEffect != null) { // make sure the effect is loaded
+                players.put(player.getUniqueId(), uEffect);
             }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Collection<Player> getOnlinePlayers() {
+        try {
+            if (Bukkit.class.getMethod("getOnlinePlayers").getReturnType() == Collection.class) {
+                return ((Collection<Player>) Bukkit.class.getMethod("getOnlinePlayers").invoke(null));
+            } else {
+                return Arrays.asList(((Player[]) Bukkit.class.getMethod("getOnlinePlayers").invoke(null)));
+            }
+        } catch (InvocationTargetException ex) {
+            throw new RuntimeException(ex);
+        } catch (NoSuchMethodException ex) {
+            // should never happen
+            throw new UnsupportedOperationException("Jeepers creepers!", ex);
+        } catch (IllegalAccessException ex) {
+            // should also never happen
+            throw new UnsupportedOperationException("Jeepers creepers!", ex);
         }
     }
 
