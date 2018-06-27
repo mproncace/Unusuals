@@ -42,6 +42,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.inventory.InventoryType.SlotType;
@@ -122,25 +123,37 @@ public class Main extends JavaPlugin implements Listener {
 
         ConfigurationSection cs = getConfig().getConfigurationSection("effects");
         if (cs != null) {
-            String[] nonSections = new String[]{"particles", "effects", "speed", "count"};
+            String[] nonSections = new String[]{"particles", "speed", "count", "radius"};
             for (String k : cs.getKeys(false)) { // root effects
-                ConfigurationSection effect = cs.getConfigurationSection(k);
-                if (effect != null) {
+                ConfigurationSection effectCs = cs.getConfigurationSection(k);
+                if (effectCs != null) {
+                    String effectName = effectCs.getName();
+
                     List<ParticleEffect> pEffects = new ArrayList<ParticleEffect>();
-                    pEffects.add(parseEffect(effect));
+                    ParticleEffect eff = parseEffect(effectCs);
+                    if (eff != null) {
+                        pEffects.add(eff);
+                    }
                     keyLoop:
-                    for (String subKey : effect.getKeys(true)) { // subkeys of effects
+                    for (String subKey : effectCs.getKeys(true)) { // subkeys of effects
                         for (String ns : nonSections) {
-                            if (k.endsWith(ns)) {
+                            if (subKey.endsWith(ns)) {
                                 continue keyLoop;
                             }
                         }
-                        ConfigurationSection subCs = effect.getConfigurationSection(subKey);
+                        ConfigurationSection subCs = effectCs.getConfigurationSection(subKey);
                         if (subCs != null) {
-                            pEffects.add(parseEffect(subCs));
+                            ParticleEffect subEff = parseEffect(subCs);
+                            if (subEff != null) {
+                                pEffects.add(subEff);
+                            }
                         }
                     }
-                    effects.put(effect.getName(), new UnusualEffect(effect.getName(), pEffects));
+                    if (pEffects.isEmpty()) {
+                        getLogger().warning("Incomplete unusual effect definition for " + effectName + ", ignoring.");
+                        continue;
+                    }
+                    effects.put(effectName, new UnusualEffect(effectName, pEffects));
                 }
             }
         }
@@ -213,16 +226,17 @@ public class Main extends JavaPlugin implements Listener {
                                 Material mat = Material.matchMaterial(args[1]);
                                 if (mat != null) {
                                     if (!HEADWEAR.contains(mat)) {
-
+                                        sender.sendMessage(ChatColor.RED + "Item must be headwear!");
+                                        return true;
                                     }
 
                                     if (args.length > 2) {
-                                        String effectName = "";
+                                        StringBuilder effectName = new StringBuilder();
                                         for (int i = 2; i < args.length; i++) {
-                                            effectName += args[i] + (i < args.length - 1 ? " " : "");
+                                            effectName.append(args[i]).append(i < args.length - 1 ? " " : "");
                                         }
                                         try {
-                                            ((Player) sender).getInventory().addItem(createUnusual(mat, effectName));
+                                            ((Player) sender).getInventory().addItem(createUnusual(mat, effectName.toString()));
                                             sender.sendMessage(ChatColor.DARK_PURPLE + "Enjoy your Unusual!");
                                         } catch (IllegalArgumentException ex) {
                                             if (ex.getMessage().contains("particle")) {
@@ -275,22 +289,20 @@ public class Main extends JavaPlugin implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onInventoryClick(InventoryClickEvent e) {
-        if (e.getInventory().getHolder() instanceof Player) {
-            if (e.getSlotType() == SlotType.ARMOR &&
-                    ((e.getInventory().getType() == InventoryType.PLAYER && e.getSlot() == 5) || // wtf minecraft
-                            (e.getInventory().getType() == InventoryType.CRAFTING && e.getSlot() == 39))) {
-                if (isUnusual(e.getCurrentItem())) {
-                    players.remove(e.getWhoClicked().getUniqueId()); // remove the unusual effect
-                } else {
-                    Main.checkForUnusual((Player) e.getWhoClicked(), e.getCursor());
+    public void onInventoryClick(InventoryClickEvent event) {
+        if (event.getInventory().getHolder() instanceof Player) {
+            if (event.getSlotType() == SlotType.ARMOR &&
+                    ((event.getInventory().getType() == InventoryType.PLAYER && event.getSlot() == 5) || // wtf minecraft
+                            (event.getInventory().getType() == InventoryType.CRAFTING && event.getSlot() == 39))) {
+                if (!Main.checkForUnusual((Player) event.getWhoClicked(), event.getCursor())) {
+                    players.remove(event.getWhoClicked().getUniqueId()); // remove the unusual effect
                 }
             } else {
-                if (e.getClick().isShiftClick() && HEADWEAR.contains(e.getCurrentItem().getType())) {
-                    if (e.getSlotType() == SlotType.ARMOR) {
-                        players.remove(e.getWhoClicked().getUniqueId());
+                if (event.getClick().isShiftClick() && HEADWEAR.contains(event.getCurrentItem().getType())) {
+                    if (event.getSlotType() == SlotType.ARMOR) {
+                        players.remove(event.getWhoClicked().getUniqueId());
                     } else {
-                        Main.checkForUnusual((Player) e.getWhoClicked(), e.getCurrentItem());
+                        Main.checkForUnusual((Player) event.getWhoClicked(), event.getCurrentItem());
                     }
                 }
             }
@@ -298,8 +310,13 @@ public class Main extends JavaPlugin implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onPlayerJoin(PlayerJoinEvent e) {
-        checkForUnusual(e.getPlayer(), e.getPlayer().getInventory().getHelmet());
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        checkForUnusual(event.getPlayer(), event.getPlayer().getInventory().getHelmet());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerDeath(PlayerDeathEvent event) {
+        players.remove(event.getEntity().getUniqueId());
     }
 
     private static boolean isUnusual(ItemStack itemstack) {
@@ -311,15 +328,17 @@ public class Main extends JavaPlugin implements Listener {
                 itemstack.getItemMeta().getLore().get(0).startsWith(EFFECT_COLOR + "Effect: ");
     }
 
-    private static void checkForUnusual(Player player, ItemStack itemstack) {
+    private static boolean checkForUnusual(Player player, ItemStack itemstack) {
         if (isUnusual(itemstack)) {
             String effectName = itemstack.getItemMeta().getLore().get(0).replace(EFFECT_COLOR +
                     "Effect: ", "");// extract the effect name
             UnusualEffect uEffect = effects.get(effectName);
             if (uEffect != null) { // make sure the effect is loaded
                 players.put(player.getUniqueId(), uEffect);
+                return true;
             }
         }
+        return false;
     }
 
 }
