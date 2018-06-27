@@ -23,6 +23,7 @@
  */
 package net.caseif.unusuals;
 
+import com.google.common.collect.ImmutableSet;
 import net.caseif.unusuals.handlers.BukkitParticleHandler;
 import net.caseif.unusuals.handlers.IParticleHandler;
 import net.caseif.unusuals.handlers.NmsParticleHandler;
@@ -51,13 +52,20 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
 
 public class Main extends JavaPlugin implements Listener {
 
+    private static final ImmutableSet<Material> HEADWEAR = ImmutableSet.of(
+            Material.LEATHER_HELMET, Material.CHAINMAIL_HELMET, Material.IRON_HELMET,
+            Material.GOLD_HELMET, Material.DIAMOND_HELMET, Material.PUMPKIN,
+            Material.SKULL_ITEM
+    );
     public static JavaPlugin plugin;
     public static Logger log;
     private static HashMap<UUID, UnusualEffect> players = new HashMap<UUID, UnusualEffect>();
@@ -204,6 +212,10 @@ public class Main extends JavaPlugin implements Listener {
                             if (args.length > 1) {
                                 Material mat = Material.matchMaterial(args[1]);
                                 if (mat != null) {
+                                    if (!HEADWEAR.contains(mat)) {
+
+                                    }
+
                                     if (args.length > 2) {
                                         String effectName = "";
                                         for (int i = 2; i < args.length; i++) {
@@ -269,9 +281,17 @@ public class Main extends JavaPlugin implements Listener {
                     ((e.getInventory().getType() == InventoryType.PLAYER && e.getSlot() == 5) || // wtf minecraft
                             (e.getInventory().getType() == InventoryType.CRAFTING && e.getSlot() == 39))) {
                 if (isUnusual(e.getCurrentItem())) {
-                    players.remove(((e.getWhoClicked())).getUniqueId()); // remove the unusual effect
+                    players.remove(e.getWhoClicked().getUniqueId()); // remove the unusual effect
                 } else {
                     Main.checkForUnusual((Player) e.getWhoClicked(), e.getCursor());
+                }
+            } else {
+                if (e.getClick().isShiftClick() && HEADWEAR.contains(e.getCurrentItem().getType())) {
+                    if (e.getSlotType() == SlotType.ARMOR) {
+                        players.remove(e.getWhoClicked().getUniqueId());
+                    } else {
+                        Main.checkForUnusual((Player) e.getWhoClicked(), e.getCurrentItem());
+                    }
                 }
             }
         }
