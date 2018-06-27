@@ -51,6 +51,33 @@
                     <downloadJavadocs>true</downloadJavadocs>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <configuration>
+                    <header>HEADER.txt</header>
+                    <properties>
+                        <license.owner>Max Roncace</license.owner>
+                        <license.years>2014-2018</license.years>
+                        <license.url>me@caseif.net</license.url>
+                    </properties>
+                    <includes>
+                        <include>src/*/java/**/*.java</include>
+                    </includes>
+                    <mapping>
+                        <java>PHP</java>
+                    </mapping>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>first</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <phase>process-sources</phase>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
         <resources>
             <resource>
