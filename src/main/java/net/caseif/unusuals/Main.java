@@ -56,7 +56,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -166,12 +168,15 @@ public class Main extends JavaPlugin implements Listener {
 
         Bukkit.getScheduler().runTaskTimer(this, new Runnable() {
             public void run() {
-                for (UUID p : players.keySet()) {
-                    Player pl = Bukkit.getPlayer(p);
+                Iterator<Map.Entry<UUID, UnusualEffect>> it = players.entrySet().iterator();
+                while (it.hasNext()) {
+                    Map.Entry<UUID, UnusualEffect> e = it.next();
+
+                    Player pl = Bukkit.getPlayer(e.getKey());
                     if (pl != null) {
-                        players.get(p).display(pl);
+                        e.getValue().display(pl);
                     } else {
-                        players.remove(p);
+                        it.remove();
                     }
                 }
             }
